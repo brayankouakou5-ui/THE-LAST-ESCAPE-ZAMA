@@ -1,0 +1,58 @@
+name: Build THE LAST ESCAPE ZAMA APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - principal
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Recuperer le projet
+        uses: actions/checkout@v4
+
+      - name: Extraire le projet ZAMA
+        run: unzip -q THE_LAST_ESCAPE_ZAMA_prototype_v1.zip -d project
+
+      - name: Installer Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Installer Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Installer et construire le jeu
+        working-directory: project/BR_WORK
+        run: |
+          npm install
+          npm run build
+
+      - name: Creer Android
+        working-directory: project/BR_WORK
+        run: npx cap add android
+
+      - name: Synchroniser Android
+        working-directory: project/BR_WORK
+        run: npx cap sync android
+
+      - name: Generer APK
+        working-directory: project/BR_WORK/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Recuperer APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: THE-LAST-ESCAPE-ZAMA-APK
+          path: project/BR_WORK/android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 14
